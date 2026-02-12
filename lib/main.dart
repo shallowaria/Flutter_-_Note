@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fight/%E4%BE%9D%E8%B5%96/random_words_widget.dart';
+
 import 'package:flutter_fight/%E8%B7%AF%E7%94%B1/echo_route.dart';
 import 'package:flutter_fight/%E8%B7%AF%E7%94%B1/new_route.dart';
 import 'package:flutter_fight/%E8%B7%AF%E7%94%B1/router_test_route.dart';
@@ -18,15 +20,15 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
       // 注册路由表
-      onGenerateRoute: (RouteSettings settings) {
-        return MaterialPageRoute(
-          builder: (context) {
-            String routeName = settings.name;
-            // 如果访问的路由页需要登录，但当前未登录，则直接返回登录页路由，
-            // 引导用户登录；其他情况则正常打开路由。
-          },
-        );
-      },
+      // onGenerateRoute: (RouteSettings settings) {
+      //   return MaterialPageRoute(
+      //     builder: (context) {
+      //       String routeName = settings.name;
+      //       // 如果访问的路由页需要登录，但当前未登录，则直接返回登录页路由，
+      //       // 引导用户登录；其他情况则正常打开路由。
+      //     },
+      //   );
+      // },
       routes: {
         "tip2": (context) {
           return TipRoute(
@@ -100,6 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 style: TextStyle(color: Colors.blue[700]),
               ),
             ),
+            RandomWordsWidget(),
           ],
         ),
       ),
