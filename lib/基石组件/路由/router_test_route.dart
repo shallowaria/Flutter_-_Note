@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_fight/%E8%B7%AF%E7%94%B1/tip_route.dart';
+import 'package:flutter_fight/%E5%9F%BA%E7%9F%B3%E7%BB%84%E4%BB%B6/%E8%B7%AF%E7%94%B1/tip_route.dart';
 
 class RouterTestRoute extends StatelessWidget {
   const RouterTestRoute({super.key});
