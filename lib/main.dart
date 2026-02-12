@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fight/%E8%B7%AF%E7%94%B1/echo_route.dart';
+import 'package:flutter_fight/%E8%B7%AF%E7%94%B1/new_route.dart';
+import 'package:flutter_fight/%E8%B7%AF%E7%94%B1/router_test_route.dart';
+import 'package:flutter_fight/%E8%B7%AF%E7%94%B1/tip_route.dart';
 
 void main() {
   runApp(const MyApp());
@@ -7,13 +11,36 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      // 注册路由表
+      onGenerateRoute: (RouteSettings settings) {
+        return MaterialPageRoute(
+          builder: (context) {
+            String routeName = settings.name;
+            // 如果访问的路由页需要登录，但当前未登录，则直接返回登录页路由，
+            // 引导用户登录；其他情况则正常打开路由。
+          },
+        );
+      },
+      routes: {
+        "tip2": (context) {
+          return TipRoute(
+            text: ModalRoute.of(context)!.settings.arguments as String,
+          );
+        },
+        'new_page': (context) => NewRoute(),
+        'new_page2': (context) => EchoRoute(),
+        '/': (context) =>
+            MyHomePage(title: 'Flutter Demo Home Page'), //等同于下面写home，注册主路由
+      },
+
+      // home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      // home: RouterTestRoute(),
     );
   }
 }
@@ -47,11 +74,31 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         child: Column(
           mainAxisAlignment: .center,
-          children: [
+          children: <Widget>[
             const Text('You have pushed the button this many times:'),
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(
+                  context,
+                ).pushNamed('new_page2', arguments: 'hi from main');
+                // Navigator.pushNamed(context, 'new_page');
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (context) {
+                //       return NewRoute();
+                //     },
+                //   ),
+                // );
+              },
+              child: Text(
+                'open new route',
+                style: TextStyle(color: Colors.blue[700]),
+              ),
             ),
           ],
         ),
