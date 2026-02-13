@@ -607,3 +607,237 @@ DecoratedBox(
 #### 页面骨架
 
 - Scaffold
+
+## 可滚动组件
+
+1. ListView 中的列表项组件都是 RenderBox，**并不是 Sliver**， 这个一定要注意。
+2. 一个 ListView 中只有一个Sliver，对列表项进行按需加载的逻辑是 Sliver 中实现的。
+3. ListView 的 Sliver 默认是 SliverList，如果指定了 `itemExtent` ，则会使用 SliverFixedExtentList；如果 `prototypeItem` 属性不为空，则会使用 SliverPrototypeExtentList，无论是是哪个，都实现了子组件的按需加载模型。
+
+###基础概念
+
+- 基于 Sliver ( RenderSliver ) 按需加载列表布局。
+- Sliver 可以包含一个或多个子组件。Sliver 的主要作用是配合：加载子组件并确定每一个子组件的布局和绘制信息，如果 Sliver 可以包含多个子组件时，通常会实现按需加载模型。可滚动组件中有很多都支持基于Sliver的按需加载模型，如`ListView`、`GridView`，但是也有不支持该模型的，如`SingleChildScrollView`
+
+Flutter 中的可滚动组件主要由三个角色组成：Scrollable、Viewport 和 Sliver：
+
+- Scrollable ：用于处理滑动手势，确定滑动偏移，滑动偏移变化时构建 Viewport 。
+- Viewport：显示的视窗，即列表的可视区域；
+- Sliver：视窗里显示的元素。
+
+具体布局过程：
+
+1. Scrollable 监听到用户滑动行为后，根据最新的滑动偏移构建 Viewport 。
+2. Viewport 将当前视口信息和配置信息通过 SliverConstraints 传递给 Sliver。
+3. Sliver 中对子组件（RenderBox）按需进行构建和布局，然后确认自身的位置、绘制等信息，保存在 geometry 中（一个 SliverGeometry 类型的对象）。
+
+![image-20260213205826805](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260213205826805.png)
+
+图中白色区域为设备屏幕，也是 Scrollable 、 Viewport 和 Sliver 所占用的空间，三者所占用的空间重合，父子关系为：Sliver 父组件为 Viewport，Viewport的 父组件为 Scrollable 。注意ListView 中只有一个 Sliver，在 Sliver 中实现了子组件（列表项）的按需加载和布局。
+
+其中顶部和底部灰色的区域为 cacheExtent，它表示预渲染的高度，需要注意这是在可视区域之外，如果 RenderBox 进入这个区域内，即使它还未显示在屏幕上，也是要先进行构建的，预渲染是为了后面进入 Viewport 的时候更丝滑。cacheExtent 的默认值是 250，在构建可滚动列表时我们可以指定这个值，这个值最终会传给 Viewport。
+
+####Scrollable
+
+用于处理滑动手势，确定滑动偏移，滑动偏移变化时构建 Viewport
+
+- `axisDirection` 滚动方向。
+- `physics`：此属性接受一个`ScrollPhysics`类型的对象，它决定可滚动组件如何响应用户操作，比如用户滑动完抬起手指后，继续执行动画；或者滑动到边界时，如何显示。Flutter SDK中包含了两个`ScrollPhysics`的子类，他们可以直接使用：
+  - `ClampingScrollPhysics`：列表滑动到边界时将不能继续滑动，通常在Android 中 配合 `GlowingOverscrollIndicator`（实现微光效果的组件） 使用。
+  - `BouncingScrollPhysics`：iOS 下弹性效果。
+- `controller`：此属性接受一个`ScrollController`对象。`ScrollController`的主要作用是控制滚动位置和监听滚动事件。默认情况下，Widget树中会有一个默认的`PrimaryScrollController`，如果子树中的可滚动组件没有显式的指定`controller`，并且`primary`属性值为`true`时（默认就为`true`），可滚动组件会使用这个默认的`PrimaryScrollController`。这种机制带来的好处是父组件可以控制子树中可滚动组件的滚动行为。
+- `viewportBuilder`：构建 Viewport 的回调。当用户滑动时，Scrollable 会调用此回调构建新的 Viewport，同时传递一个 ViewportOffset 类型的 offset 参数，该参数描述 Viewport 应该显示那一部分内容。注意重新构建 Viewport 并不是一个昂贵的操作，因为 Viewport 本身也是 Widget，只是配置信息，Viewport 变化时对应的 RenderViewport 会更新信息，并不会随着 Widget 进行重新构建。
+
+在可滚动组件的坐标描述中，通常将滚动方向称为主轴，非滚动方向称为纵轴。由于可滚动组件的默认方向一般都是沿垂直方向，所以默认情况下主轴就是指垂直方向，水平方向同理。
+
+#### Viewport
+
+Viewport 比较简单，用于渲染当前视口中需要显示 Sliver。
+
+![image-20260213210835151](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260213210835151.png)
+
+- offset：该参数为Scrollabel 构建 Viewport 时传入，它描述了 Viewport 应该显示那一部分内容。
+- cacheExtent 和 cacheExtentStyle：CacheExtentStyle 是一个枚举，有 pixel 和 viewport 两个取值。当 cacheExtentStyle 值为 pixel 时，cacheExtent 的值为预渲染区域的具体像素长度；当值为 viewport 时，cacheExtent 的值是一个乘数，表示有几个 viewport 的长度，最终的预渲染区域的像素长度为：cacheExtent * viewport 的积， 这在每一个列表项都占满整个 Viewport 时比较实用，这时 cacheExtent 的值就表示前后各缓存几个页面。
+
+#### Sliver
+
+Sliver 主要作用是对子组件进行构建和布局，比如 ListView 的 Sliver 需要实现子组件（列表项）按需加载功能，只有当列表项进入预渲染区域时才会去对它进行构建和布局、渲染。
+
+Sliver 对应的渲染对象类型是 RenderSliver，RenderSliver 和 RenderBox 的相同点是都继承自 RenderObject 类，不同点是在布局的时候约束信息不同。RenderBox 在布局时父组件传递给它的约束信息对应的是 `BoxConstraints`，只包含最大宽高的约束；而 RenderSliver 在布局时父组件（列表）传递给它的约束是对应的是 `SliverConstraints`。
+
+#### 通用配置
+
+几乎所有的可滚动组件在构造时都能指定 `scrollDirection`（滑动的主轴）、`reverse`（滑动方向是否反向）、`controller`、`physics` 、`cacheExtent` ，这些属性最终会透传给对应的 Scrollable 和 Viewport，这些属性我们可以认为是可滚动组件的通用属性
+
+#### ScrollController
+
+可滚动组件都有一个 controller 属性，通过该属性我们可以指定一个 ScrollController 来控制可滚动组件的滚动，比如可以通过ScrollController来同步多个组件的滑动联动。
+
+#### 子节点缓存
+
+ //TODO
+
+#### Scrollbar
+
+`Scrollbar`是一个Material风格的滚动指示器（滚动条），如果要给可滚动组件添加滚动条，只需将`Scrollbar`作为可滚动组件的任意一个父级组件即可
+
+```dart
+Scrollbar(
+  child: SingleChildScrollView(
+    ...
+  ),
+);
+```
+
+### SingleChildScrollView
+
+SingleChildScrollView**只能接收一个子组件**
+
+![image-20260213211413030](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260213211413030.png)
+
+`primary`属性：它表示是否使用 widget 树中默认的`PrimaryScrollController`（MaterialApp 组件树中已经默认包含一个 PrimaryScrollController 了）；当滑动方向为垂直方向（`scrollDirection`值为`Axis.vertical`）并且没有指定`controller`时，`primary`默认为`true`
+
+### LisstView
+
+#### 默认构造函数
+
+
+
+`ListView`是最常用的可滚动组件之一，它可以沿一个方向线性排布所有子组件，并且它也支持列表项懒加载（在需要时才会创建）。
+
+构造函数定义：
+
+```dart
+ListView({
+  ...  
+  //可滚动widget公共参数
+  Axis scrollDirection = Axis.vertical,
+  bool reverse = false,
+  ScrollController? controller,
+  bool? primary,
+  ScrollPhysics? physics,
+  EdgeInsetsGeometry? padding,
+  
+  //ListView各个构造函数的共同参数  
+  double? itemExtent,
+  Widget? prototypeItem, //列表项原型，后面解释
+  bool shrinkWrap = false,
+  bool addAutomaticKeepAlives = true,
+  bool addRepaintBoundaries = true,
+  double? cacheExtent, // 预渲染区域长度
+    
+  //子widget列表
+  List<Widget> children = const <Widget>[],
+})
+```
+
+- `itemExtent`：该参数如果不为`null`，则会强制`children`的“长度”为`itemExtent`的值；这里的“长度”是指滚动方向上子组件的长度，也就是说如果滚动方向是垂直方向，则`itemExtent`代表子组件的高度；如果滚动方向为水平方向，则`itemExtent`就代表子组件的宽度。在`ListView`中，指定`itemExtent`比让子组件自己决定自身长度会有更好的性能，这是因为指定`itemExtent`后，滚动系统可以提前知道列表的长度，而无需每次构建子组件时都去再计算一下，尤其是在滚动位置频繁变化时（滚动系统需要频繁去计算列表高度）。
+- `prototypeItem`：如果我们知道列表中的所有列表项长度都相同但不知道具体是多少，这时我们可以指定一个列表项，该列表项被称为 `prototypeItem`（列表项原型）。指定 `prototypeItem` 后，可滚动组件会在 layout 时计算一次它延主轴方向的长度，这样也就预先知道了所有列表项的延主轴方向的长度，所以和指定 `itemExtent` 一样，指定 `prototypeItem` 会有更好的性能。注意，`itemExtent` 和`prototypeItem` 互斥，不能同时指定它们。
+- `shrinkWrap`：该属性表示是否根据子组件的总长度来设置`ListView`的长度，默认值为`false` 。默认情况下，`ListView`会在滚动方向尽可能多的占用空间。当`ListView`在一个无边界(滚动方向上)的容器中时，`shrinkWrap`必须为`true`。
+- `addAutomaticKeepAlives`：该属性我们将在介绍 PageView 组件时详细解释。
+- `addRepaintBoundaries`：该属性表示是否将列表项（子组件）包裹在`RepaintBoundary`组件中。`RepaintBoundary` 读者可以先简单理解为它是一个”绘制边界“，将列表项包裹在`RepaintBoundary`中可以避免列表项不必要的重绘，但是当列表项重绘的开销非常小（如一个颜色块，或者一个较短的文本）时，不添加`RepaintBoundary`反而会更高效（具体原因会在本书后面 Flutter 绘制原理相关章节中介绍）。如果列表项自身来维护是否需要添加绘制边界组件，则此参数应该指定为 false。
+
+> 注意：上面这些参数并非`ListView`特有，在本章后面介绍的其他可滚动组件也可能会拥有这些参数，它们的含义是相同的。
+
+默认构造函数有一个`children`参数，它接受一个Widget列表（List<Widget>）。这种方式适合只有少量的子组件数量已知且比较少的情况，反之则应该使用`ListView.builder` 按需动态构建列表项。
+
+> 注意：虽然这种方式将所有`children`一次性传递给 ListView，但子组件）仍然是在需要时才会加载（build（如有）、布局、绘制），也就是说通过默认构造函数构建的 ListView 也是基于 Sliver 的列表懒加载模型。
+
+eg:
+
+```dart
+ListView(
+  shrinkWrap: true, 
+  padding: const EdgeInsets.all(20.0),
+  children: <Widget>[
+    const Text('I\'m dedicating every day to you'),
+    const Text('Domestic life was never quite my style'),
+    const Text('When you smile, you knock me out, I fall apart'),
+    const Text('And I thought I was so smart'),
+  ],
+);
+```
+
+#### ListView.builder
+
+`ListView.builder`适合列表项比较多或者列表项不确定的情况
+
+```dart
+ListView.builder({
+  // ListView公共参数已省略  
+  ...
+  required IndexedWidgetBuilder itemBuilder,
+  int itemCount,
+  ...
+})
+
+```
+
+- `itemBuilder`：它是列表项的构建器，类型为`IndexedWidgetBuilder`，返回值为一个widget。当列表滚动到具体的`index`位置时，会调用该构建器构建列表项。
+- `itemCount`：列表项的数量，如果为`null`，则为无限列表。
+
+eg:
+
+```dart
+ListView.builder(
+  itemCount: 100,
+  itemExtent: 50.0, //强制高度为50.0
+  itemBuilder: (BuildContext context, int index) {
+    return ListTile(title: Text("$index"));
+  }
+);
+```
+
+![image-20260213214822115](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260213214822115.png)
+
+#### ListView.separated
+
+`ListView.separated`可以在生成的列表项之间添加一个分割组件，它比`ListView.builder`多了一个`separatorBuilder`参数，该参数是一个分割组件生成器。
+
+下面我们看一个例子：奇数行添加一条蓝色下划线，偶数行添加一条绿色下划线。
+
+```dart
+class ListView3 extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    //下划线widget预定义以供复用。  
+    Widget divider1=Divider(color: Colors.blue,);
+    Widget divider2=Divider(color: Colors.green);
+    return ListView.separated(
+      itemCount: 100,
+      //列表项构造器
+      itemBuilder: (BuildContext context, int index) {
+        return ListTile(title: Text("$index"));
+      },
+      //分割器构造器
+      separatorBuilder: (BuildContext context, int index) {
+        return index%2==0?divider1:divider2;
+      },
+    );
+  }
+}
+```
+
+![image-20260213214915179](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260213214915179.png)
+
+### 无限加载列表
+
+从数据源异步分批拉取一些数据，然后用`ListView`展示，当我们滑动到列表末尾时，判断是否需要再去拉取数据，如果是，则去拉取，拉取过程中在表尾显示一个loading，拉取成功后将数据插入列表；如果不需要再去拉取，则在表尾提示"没有更多"。
+
+### 添加固定表头
+
+![image-20260213220305727](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260213220305727.png)
+
+```dart
+@override
+Widget build(BuildContext context) {
+  return Column(children: <Widget>[
+    ListTile(title:Text("商品列表")),
+    Expanded(
+      child: ListView.builder(itemBuilder: (BuildContext context, int index) {
+        return ListTile(title: Text("$index"));
+      }),
+    ),
+  ]);
+}
+```

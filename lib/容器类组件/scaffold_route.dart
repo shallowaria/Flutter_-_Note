@@ -28,10 +28,6 @@ class ScaffoldRouteState extends State<ScaffoldRoute> {
         ),
         actions: [IconButton(onPressed: () {}, icon: Icon(Icons.share))],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onAdd,
-        child: Icon(Icons.add),
-      ),
 
       drawer: MyDrawer(),
       // bottomNavigationBar: BottomNavigationBar(
@@ -48,6 +44,10 @@ class ScaffoldRouteState extends State<ScaffoldRoute> {
       //   onTap: _onItemTapped,
       // ),
       // 中间空
+      floatingActionButton: FloatingActionButton(
+        onPressed: _onAdd,
+        child: Icon(Icons.add),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
         color: Colors.white,
