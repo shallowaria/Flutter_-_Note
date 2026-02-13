@@ -5,6 +5,10 @@ import 'package:flutter_fight/%E5%9F%BA%E7%9F%B3%E7%BB%84%E4%BB%B6/%E8%B7%AF%E7%
 import 'package:flutter_fight/%E5%9F%BA%E7%A1%80%E7%BB%84%E4%BB%B6/%E5%8D%95%E9%80%89%E5%BC%80%E5%85%B3%E5%92%8C%E5%A4%8D%E9%80%89%E6%A1%86/progress_route.dart';
 import 'package:flutter_fight/%E5%9F%BA%E7%A1%80%E7%BB%84%E4%BB%B6/%E8%BE%93%E5%85%A5%E6%A1%86%E5%92%8C%E8%A1%A8%E5%8D%95/login_form_page.dart';
 import 'package:flutter_fight/%E5%9F%BA%E7%A1%80%E7%BB%84%E4%BB%B6/%E8%BF%9B%E5%BA%A6%E6%8C%87%E7%A4%BA%E5%99%A8/progress_indicator_widget.dart';
+import 'package:flutter_fight/%E5%AE%B9%E5%99%A8%E7%B1%BB%E7%BB%84%E4%BB%B6/clip_test_widget.dart';
+import 'package:flutter_fight/%E5%AE%B9%E5%99%A8%E7%B1%BB%E7%BB%84%E4%BB%B6/container_test_widget.dart';
+import 'package:flutter_fight/%E5%AE%B9%E5%99%A8%E7%B1%BB%E7%BB%84%E4%BB%B6/padding_test_route.dart';
+import 'package:flutter_fight/%E5%AE%B9%E5%99%A8%E7%B1%BB%E7%BB%84%E4%BB%B6/scaffold_route.dart';
 import 'package:flutter_fight/%E5%B8%83%E5%B1%80%E7%B1%BB%E7%BB%84%E4%BB%B6/constrains_widget.dart';
 import 'package:flutter_fight/%E5%B8%83%E5%B1%80%E7%B1%BB%E7%BB%84%E4%BB%B6/stack_positioned_widget.dart';
 
@@ -40,6 +44,7 @@ class MyApp extends StatelessWidget {
         'new_page': (context) => NewRoute(),
         'new_page2': (context) => EchoRoute(),
         'input_form': (context) => LoginFormPage(),
+        'scaffold_route': (context) => ScaffoldRoute(),
         '/': (context) =>
             MyHomePage(title: 'Flutter Combat Home Page'), //等同于下面写home，注册主路由
       },
@@ -68,26 +73,23 @@ class _MyHomePageState extends State<MyHomePage> {
 
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: .center,
-          children: <Widget>[
-            StackPositionedWidget(),
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  'input_form',
-                  arguments: 'hi from main',
-                );
-              },
-              child: Text(
-                'open input form',
-                style: TextStyle(color: Colors.blue[700]),
-              ),
+      body: Column(
+        children: <Widget>[
+          ClipTestWidget(),
+          TextButton(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                'scaffold_route',
+                arguments: 'hi from main',
+              );
+            },
+            child: Text(
+              'jump to scaffold_route',
+              style: TextStyle(color: Colors.blue[700]),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -450,3 +450,160 @@ Container(
 #### LayoutBuilder
 
 在**布局过程**中拿到父组件传递的约束信息，然后我们可以根据约束信息动态的构建不同的布局。
+
+##容器组件
+
+###DecoratedBox
+
+`DecoratedBox`可以在其子组件绘制前(或后)绘制一些装饰（Decoration）
+
+- `decoration`：代表将要绘制的装饰，它的类型为`Decoration`。`Decoration`是一个抽象类，它定义了一个接口 `createBoxPainter()`，子类的主要职责是需要通过实现它来创建一个画笔，该画笔用于绘制装饰。
+- `position`：此属性决定在哪里绘制`Decoration`，它接收`DecorationPosition`的枚举类型，该枚举类有两个值：
+  - `background`：在子组件之后绘制，即背景装饰。
+  - `foreground`：在子组件之上绘制，即前景。
+
+####BoxDecoration
+
+我们==通常会直接使用`BoxDecoration`类==，它是一个Decoration的子类，实现了常用的装饰元素的绘制。
+
+```dart
+BoxDecoration({
+  Color color, //颜色
+  DecorationImage image,//图片
+  BoxBorder border, //边框
+  BorderRadiusGeometry borderRadius, //圆角
+  List<BoxShadow> boxShadow, //阴影,可以指定多个
+  Gradient gradient, //渐变
+  BlendMode backgroundBlendMode, //背景混合模式
+  BoxShape shape = BoxShape.rectangle, //形状
+})
+
+```
+
+示例：
+
+```dart
+ DecoratedBox(
+   decoration: BoxDecoration(
+     gradient: LinearGradient(colors:[Colors.red,Colors.orange.shade700]), //背景渐变
+     borderRadius: BorderRadius.circular(3.0), //3像素圆角
+     boxShadow: [ //阴影
+       BoxShadow(
+         color:Colors.black54,
+         offset: Offset(2.0,2.0),
+         blurRadius: 4.0
+       )
+     ]
+   ),
+  child: Padding(
+    padding: EdgeInsets.symmetric(horizontal: 80.0, vertical: 18.0),
+    child: Text("Login", style: TextStyle(color: Colors.white),),
+  )
+)
+```
+
+![image-20260213180603496](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260213180603496.png)
+
+### 变换 Transform
+
+`Transform`可以在其子组件绘制时对其应用一些矩阵变换来实现一些特效。`Matrix4`是一个4D矩阵
+
+```dart
+Container(
+  color: Colors.black,
+  child: Transform(
+    alignment: Alignment.topRight, //相对于坐标系原点的对齐方式
+    transform: Matrix4.skewY(0.3), //沿Y轴倾斜0.3弧度
+    child: Container(
+      padding: const EdgeInsets.all(8.0),
+      color: Colors.deepOrange,
+      child: const Text('Apartment for rent!'),
+    ),
+  ),
+)
+```
+
+![image-20260213180732206](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260213180732206.png)
+
+> 由于矩阵变化时发生在绘制时，而无需重新布局和构建等过程，所以性能很好。
+
+#### 平移
+
+`Transform.translate`接收一个`offset`参数，可以在绘制时沿`x`、`y`轴对子组件平移指定的距离。
+
+```dart
+DecoratedBox(
+  decoration:BoxDecoration(color: Colors.red),
+  //默认原点为左上角，左移20像素，向上平移5像素  
+  child: Transform.translate(
+    offset: Offset(-20.0, -5.0),
+    child: Text("Hello world"),
+  ),
+)
+```
+
+![image-20260213181531788](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260213181531788.png)
+
+#### 旋转
+
+Transform.rotate可以对子组件进行旋转变换
+
+```dart
+DecoratedBox(
+  decoration:BoxDecoration(color: Colors.red),
+  child: Transform.rotate(
+    //旋转90度
+    angle:math.pi/2 ,
+    child: Text("Hello world"),
+  ),
+)
+```
+
+> 注意：要使用`math.pi`需先进行如下导包。
+
+`import 'dart:math' as math;  `
+
+![image-20260213181631994](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260213181631994.png)
+
+#### 缩放
+
+`Transform.scale`可以对子组件进行缩小或放大
+
+```dart
+DecoratedBox(
+  decoration:BoxDecoration(color: Colors.red),
+  child: Transform.scale(
+    scale: 1.5, //放大到1.5倍
+    child: Text("Hello world")
+  )
+);
+```
+
+####Tip
+
+`Transform`的变换是应用在绘制阶段，而并不是应用在布局(layout)阶段，所以无论对子组件应用何种变化，其占用空间的大小和在屏幕上的位置都是固定不变的，因为这些是在布局阶段就确定的。
+
+#### RotatedBox
+
+`RotatedBox`和`Transform.rotate`功能相似，它们都可以对子组件进行旋转变换，但是有一点不同：`RotatedBox`的变换是在layout阶段，会影响在子组件的位置和大小。
+
+### 容器 Container
+
+- container padding margin
+
+### 裁剪 Clip
+
+| 剪裁Widget | 默认行为                                                 |
+| ---------- | -------------------------------------------------------- |
+| ClipOval   | 子组件为正方形时剪裁成内贴圆形；为矩形时，剪裁成内贴椭圆 |
+| ClipRRect  | 将子组件剪裁为圆角矩形                                   |
+| ClipRect   | 默认剪裁掉子组件布局空间之外的绘制内容（溢出部分剪裁）   |
+| ClipPath   | 按照自定义的路径剪裁                                     |
+
+### 空间适配
+
+- FittedBox 动态调整以防止溢出
+
+#### 页面骨架
+
+- Scaffold

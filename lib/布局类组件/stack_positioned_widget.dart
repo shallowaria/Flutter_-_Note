@@ -13,7 +13,6 @@ class StackPositionedWidget extends StatelessWidget {
         Container(
           child: Text('Hello world,', style: TextStyle(color: Colors.white)),
         ),
-
         Positioned(top: 18.0, child: Text('Your friend')),
       ],
     );
