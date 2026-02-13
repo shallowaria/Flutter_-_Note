@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_fight/%E5%9F%BA%E7%9F%B3%E7%BB%84%E4%BB%B6/%E4%BE%9D%E8%B5%96/random_words_widget.dart';
 import 'package:flutter_fight/%E5%9F%BA%E7%9F%B3%E7%BB%84%E4%BB%B6/%E8%B7%AF%E7%94%B1/echo_route.dart';
 import 'package:flutter_fight/%E5%9F%BA%E7%9F%B3%E7%BB%84%E4%BB%B6/%E8%B7%AF%E7%94%B1/new_route.dart';
 import 'package:flutter_fight/%E5%9F%BA%E7%9F%B3%E7%BB%84%E4%BB%B6/%E8%B7%AF%E7%94%B1/tip_route.dart';
-import 'package:flutter_fight/%E5%9F%BA%E7%A1%80%E7%BB%84%E4%BB%B6/%E6%96%87%E6%9C%AC%E5%8F%8A%E6%A0%B7%E5%BC%8F/default_text_style_widget.dart';
-import 'package:flutter_fight/%E5%9F%BA%E7%A1%80%E7%BB%84%E4%BB%B6/%E6%96%87%E6%9C%AC%E5%8F%8A%E6%A0%B7%E5%BC%8F/text_widget.dart';
+import 'package:flutter_fight/%E5%9F%BA%E7%A1%80%E7%BB%84%E4%BB%B6/%E5%8D%95%E9%80%89%E5%BC%80%E5%85%B3%E5%92%8C%E5%A4%8D%E9%80%89%E6%A1%86/progress_route.dart';
+import 'package:flutter_fight/%E5%9F%BA%E7%A1%80%E7%BB%84%E4%BB%B6/%E8%BE%93%E5%85%A5%E6%A1%86%E5%92%8C%E8%A1%A8%E5%8D%95/login_form_page.dart';
+import 'package:flutter_fight/%E5%9F%BA%E7%A1%80%E7%BB%84%E4%BB%B6/%E8%BF%9B%E5%BA%A6%E6%8C%87%E7%A4%BA%E5%99%A8/progress_indicator_widget.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,8 +37,9 @@ class MyApp extends StatelessWidget {
         },
         'new_page': (context) => NewRoute(),
         'new_page2': (context) => EchoRoute(),
-        '/': (context) => DefaultTextStyleWidget(),
-        // MyHomePage(title: 'Flutter Demo Home Page'), //等同于下面写home，注册主路由
+        'input_form': (context) => LoginFormPage(),
+        '/': (context) =>
+            MyHomePage(title: 'Flutter Demo Home Page'), //等同于下面写home，注册主路由
       },
 
       // home: const MyHomePage(title: 'Flutter Demo Home Page'),
@@ -57,14 +58,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,41 +70,23 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: .center,
           children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            // ProgressIndicatorWidget(),
+            ProgressRoute(),
             TextButton(
               onPressed: () {
                 Navigator.pushNamed(
                   context,
-                  'new_page2',
+                  'input_form',
                   arguments: 'hi from main',
                 );
-                // Navigator.pushNamed(context, 'new_page');
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (context) {
-                //       return NewRoute();
-                //     },
-                //   ),
-                // );
               },
               child: Text(
-                'open new route',
+                'open input form',
                 style: TextStyle(color: Colors.blue[700]),
               ),
             ),
-            RandomWordsWidget(),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
