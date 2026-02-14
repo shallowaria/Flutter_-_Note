@@ -1107,4 +1107,286 @@ GridView.builder(
 
 其中`itemBuilder`为子widget构建器。
 
- 
+ ### *PageView
+
+#### PageView
+
+要实现页面切换和 Tab 布局，我们可以使用 PageView 组件。需要注意，PageView 是一个非常重要的组件，因为在移动端开发中很常用，比如大多数 App 都包含 Tab 换页效果、图片轮动以及抖音上下滑页切换视频功能等等，这些都可以通过 PageView 轻松实现。
+
+```dart
+PageView({
+  Key? key,
+  this.scrollDirection = Axis.horizontal, // 滑动方向
+  this.reverse = false,
+  PageController? controller,
+  this.physics,
+  List<Widget> children = const <Widget>[],
+  this.onPageChanged,
+  
+  //每次滑动是否强制切换整个页面，如果为false，则会根据实际的滑动距离显示页面
+  this.pageSnapping = true,
+  //设为true预缓存一页
+  this.allowImplicitScrolling = false,
+  //后面解释
+  this.padEnds = true,
+})
+```
+
+### TabBarView
+
+TabBarView 封装了 PageView
+
+```dart
+ TabBarView({
+  Key? key,
+  required this.children, // tab 页
+  this.controller, // TabController
+  this.physics,
+  this.dragStartBehavior = DragStartBehavior.start,
+}) 
+```
+
+TabController 用于监听和控制 TabBarView 的页面切换，通常和 TabBar 联动。如果没有指定，则会在组件树中向上查找并使用最近的一个 `DefaultTabController` 。
+
+#### TabBar
+
+![image-20260214171306321](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260214171306321.png)
+
+TabBar 有很多配置参数，通过这些参数我们可以定义 TabBar 的样式，很多属性都是在配置 indicator 和 label，拿上图来举例，Label 是每个Tab 的文本，indicator 指 “历史” 下面的白色下划线。
+
+```dart
+const TabBar({
+  Key? key,
+  required this.tabs, // 具体的 Tabs，需要我们创建
+  this.controller,
+  this.isScrollable = false, // 是否可以滑动
+  this.padding,
+  this.indicatorColor,// 指示器颜色，默认是高度为2的一条下划线
+  this.automaticIndicatorColorAdjustment = true,
+  this.indicatorWeight = 2.0,// 指示器高度
+  this.indicatorPadding = EdgeInsets.zero, //指示器padding
+  this.indicator, // 指示器
+  this.indicatorSize, // 指示器长度，有两个可选值，一个tab的长度，一个是label长度
+  this.labelColor, 
+  this.labelStyle,
+  this.labelPadding,
+  this.unselectedLabelColor,
+  this.unselectedLabelStyle,
+  this.mouseCursor,
+  this.onTap,
+  ...
+}) 
+```
+
+TabBar 通常位于 AppBar 的底部，它也可以接收一个 TabController ，如果需要和 TabBarView 联动， TabBar 和 TabBarView 使用同一个 TabController 即可，注意，联动时 TabBar 和 TabBarView 的孩子数量需要一致。如果没有指定 `controller`，则会在组件树中向上查找并使用最近的一个 `DefaultTabController` 。另外我们需要创建需要的 tab 并通过 `tabs` 传给 TabBar， tab 可以是任何 Widget，不过Material 组件库中已经实现了一个 Tab 组件，我们一般都会直接使用它：
+
+```dart
+const Tab({
+  Key? key,
+  this.text, //文本
+  this.icon, // 图标
+  this.iconMargin = const EdgeInsets.only(bottom: 10.0),
+  this.height,
+  this.child, // 自定义 widget
+})
+```
+
+注意，`text` 和 `child` 是互斥的，不能同时制定。
+
+### CustomScrollView 和 Slivers
+
+1. CustomScrollView 组合 Sliver 的原理是为所有子 Sliver 提供一个共享的 Scrollable，然后统一处理指定滑动方向的滑动事件。
+2. CustomScrollView 和 ListView、GridView、PageView 一样，都是**完整**的可滚动组件（同时拥有 Scrollable、Viewport、Sliver）。
+3. CustomScrollView 只能组合 Sliver，如果有孩子也是一个**完整**的可滚动组件（通过 SliverToBoxAdapter 嵌入）且它们的滑动方向一致时便不能正常工作。
+4. 
+
+ListView、GridView、PageView 都是一个**完整**的可滚动组件，所谓完整是指它们都包括Scrollable 、 Viewport 和 Sliver。假如我们想要在一个页面中，同时包含多个可滚动组件，且使它们的滑动效果能统一起来，就得使用CustomScrollView
+
+`CustomScrollView` 组件来帮助我们创建一个公共的 Scrollable 和 Viewport ，然后它的 slivers 参数接受一个 Sliver 数组，这样我们就可以使用CustomScrollView 方面的实现我们期望的功能
+
+![image-20260214173725055](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260214173725055.png)
+
+
+
+| Sliver名称                | 功能                               | 对应的可滚动组件                 |
+| ------------------------- | ---------------------------------- | -------------------------------- |
+| SliverList                | 列表                               | ListView                         |
+| SliverFixedExtentList     | 高度固定的列表                     | ListView，指定`itemExtent`时     |
+| SliverAnimatedList        | 添加/删除列表项可以执行动画        | AnimatedList                     |
+| SliverGrid                | 网格                               | GridView                         |
+| SliverPrototypeExtentList | 根据原型生成高度固定的列表         | ListView，指定`prototypeItem` 时 |
+| SliverFillViewport        | 包含多个子组件，每个都可以填满屏幕 | PageView                         |
+
+| Sliver名称                      | 对应 RenderBox      |
+| ------------------------------- | ------------------- |
+| SliverPadding                   | Padding             |
+| SliverVisibility、SliverOpacity | Visibility、Opacity |
+| SliverFadeTransition            | FadeTransition      |
+| SliverLayoutBuilder             | LayoutBuilder       |
+
+| Sliver名称             | 说明                                                   |
+| ---------------------- | ------------------------------------------------------ |
+| SliverAppBar           | 对应 AppBar，主要是为了在 CustomScrollView 中使用。    |
+| SliverToBoxAdapter     | 一个适配器，可以将 RenderBox 适配为 Sliver，后面介绍。 |
+| SliverPersistentHeader | 滑动到顶部时可以固定住，后面介绍。                     |
+
+```dart
+// 因为本路由没有使用 Scaffold，为了让子级Widget(如Text)使用
+// Material Design 默认的样式风格,我们使用 Material 作为本路由的根。
+Material(
+  child: CustomScrollView(
+    slivers: <Widget>[
+      // AppBar，包含一个导航栏.
+      SliverAppBar(
+        pinned: true, // 滑动到顶端时会固定住
+        expandedHeight: 250.0,
+        flexibleSpace: FlexibleSpaceBar(
+          title: const Text('Demo'),
+          background: Image.asset(
+            "./imgs/sea.png",
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
+      SliverPadding(
+        padding: const EdgeInsets.all(8.0),
+        sliver: SliverGrid(
+          //Grid
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2, //Grid按两列显示
+            mainAxisSpacing: 10.0,
+            crossAxisSpacing: 10.0,
+            childAspectRatio: 4.0,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (BuildContext context, int index) {
+              //创建子widget
+              return Container(
+                alignment: Alignment.center,
+                color: Colors.cyan[100 * (index % 9)],
+                child: Text('grid item $index'),
+              );
+            },
+            childCount: 20,
+          ),
+        ),
+      ),
+      SliverFixedExtentList(
+        itemExtent: 50.0,
+        delegate: SliverChildBuilderDelegate(
+          (BuildContext context, int index) {
+            //创建列表项
+            return Container(
+              alignment: Alignment.center,
+              color: Colors.lightBlue[100 * (index % 9)],
+              child: Text('list item $index'),
+            );
+          },
+          childCount: 20,
+        ),
+      ),
+    ],
+  ),
+);
+```
+
+代码分为三部分：
+
+- 头部`SliverAppBar`：`SliverAppBar`对应`AppBar`，两者不同之处在于`SliverAppBar`可以集成到`CustomScrollView`。`SliverAppBar`可以结合`FlexibleSpaceBar`实现Material Design中头部伸缩的模型，具体效果，读者可以运行该示例查看。
+- 中间的`SliverGrid`：它用`SliverPadding`包裹以给`SliverGrid`添加补白。`SliverGrid`是一个两列，宽高比为4的网格，它有20个子组件。
+- 底部`SliverFixedExtentList`：它是一个所有子元素高度都为50像素的列表。
+- ![image-20260214174154341](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260214174154341.png)
+- ![image-20260214174207827](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260214174207827.png)
+
+#### SliverToBoxAdapter
+
+Flutter 提供了一个 SliverToBoxAdapter 组件，它是一个适配器：可以将 RenderBox 适配为 Sliver，如在列表顶部添加一个可以横向滑动的 PageView
+
+```dart
+CustomScrollView(
+  slivers: [
+    SliverToBoxAdapter(
+      child: SizedBox(
+        height: 300,
+        child: PageView(
+          children: [Text("1"), Text("2")],
+        ),
+      ),
+    ),
+    buildSliverFixedList(),
+  ],
+);
+```
+
+### 嵌套可滚动组件 NestedScrollView
+
+CustomScrollView 只能组合 Sliver，如果有孩子也是一个可滚动组件（通过 SliverToBoxAdapter 嵌入）且它们的滑动方向一致时便不能正常工作。为了解决这个问题，Flutter 中提供了一个NestedScrollView 组件，它的功能是组合（协调）两个可滚动组件
+
+```dart
+const NestedScrollView({
+  ... //省略可滚动组件的通用属性
+  //header，sliver构造器
+  required this.headerSliverBuilder,
+  //可以接受任意的可滚动组件
+  required this.body,
+  this.floatHeaderSlivers = false,
+}) 
+```
+
+```dart
+Material(
+  child: NestedScrollView(
+    headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+      // 返回一个 Sliver 数组给外部可滚动组件。
+      return <Widget>[
+        SliverAppBar(
+          title: const Text('嵌套ListView'),
+          pinned: true, // 固定在顶部
+          forceElevated: innerBoxIsScrolled,
+        ),
+        buildSliverList(5), //构建一个 sliverList
+      ];
+    },
+    body: ListView.builder(
+      padding: const EdgeInsets.all(8),
+      physics: const ClampingScrollPhysics(), //重要
+      itemCount: 30,
+      itemBuilder: (BuildContext context, int index) {
+        return SizedBox(
+          height: 50,
+          child: Center(child: Text('Item $index')),
+        );
+      },
+    ),
+  ),
+);
+```
+
+NestedScrollView 在逻辑上将可滚动组件分为了 header 和 body 两部分，header 部分我们可以认为是**外部**可滚动组件（outer scroll view），可以认为这个可滚动组件就是 CustomScrollView ，所以它只能接收 Sliver，我们通过`headerSliverBuilder` 来构建一个 Sliver 列表给外部的可滚动组件；而 body 部分可以接收任意的可滚动组件，该可滚动组件称为**内部**可滚动组件 （inner scroll view）。![image-20260214175602717](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260214175602717.png)
+
+1. NestedScrollView 整体就是一个 CustomScrollView （实际上是 CustomScrollView 的一个子类）
+2. header 和 body 都是 CustomScrollView 的子 Sliver ，注意，虽然 body 是一个 RenderBox，但是它会被包装为 Sliver 。
+3. CustomScrollView 将其所有子 Sliver 在逻辑上分为 header 和 body 两部分：header 是前面部分、body 是后面部分。
+4. 当 body 是一个可滚动组件时， 它和 CustomScrollView 分别有一个 Scrollable ，由于 body 在 CustomScrollView 的内部，所以称其为内部可滚动组件，称 CustomScrollView 为外部可滚动组件；同时 因为 header 部分是 Sliver，所以没有独立的 Scrollable，滑动时是受 CustomScrollView 的 Scrollable 控制，所以为了区分，可以称 header 为外部可滚动组件（Flutter 文档中是这么约定的）。
+5. NestedScrollView 核心功能就是通过一个协调器来协调外部（outer）可滚动组件和内部（inner）可滚动组件的滚动，以使滑动效果连贯统一，协调器的实现原理就是分别给内外可滚动组件分别设置一个 controller，然后通过这两个controller 来协调控制它们的滚动。
+6. 内部的可滚动组件（body的）不能设置 `controller` 和 `primary`，这是因为 NestedScrollView 的协调器中已经指定了它的 controller，如果重新设定则协调器将会失效
+
+### SliverAppBar
+
+SliverAppBar 是 AppBar 的Sliver 版，大多数参数都相同，但 SliverAppBar 会有一些特有的功能，下面是 SliverAppBar 特有的一些配置：
+
+```dart
+const SliverAppBar({
+  this.collapsedHeight, // 收缩起来的高度
+  this.expandedHeight,// 展开时的高度
+  this.pinned = false, // 是否固定
+  this.floating = false, //是否漂浮
+  this.snap = false, // 当漂浮时，此参数才有效
+  bool forceElevated //导航栏下面是否一直显示阴影
+  ...
+})
+```
+
+- SliverAppBar 在 NestedScrollView 中随着用户的滑动是可以收缩和展开的，因此我们需要分别指定收缩和展开时的高度。
+- `pinned` 为`true` 时 SliverAppBar 会固定在 NestedScrollView 的顶部，行为 和 SliverPersistentHeader 的 `pinned`功能一致。
+- floating 和 snap：floating 为 true 时，SliverAppBar 不会固定到顶部，当用户向上滑动到顶部时，SliverAppBar 也会滑出可视窗口。当用户反向滑动时，SliverAppBar 的 snap 为 true 时，此时无论 SliverAppBar 已经滑出屏幕多远，都会立即回到屏幕顶部；但如果 snap 为 false，则 SliverAppBar 只有当向下滑到边界时才会重新回到屏幕顶部。这一点和 SliverPersistentHeader 的 `floating` 相似，但不同的是 SliverPersistentHeader 没有 snap 参数，当它的 `floating` 为 true 时，效果是等同于 SliverAppBar 的floating 和 snap 同时为 true 时的效果。

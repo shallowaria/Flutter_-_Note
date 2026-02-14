@@ -3,9 +3,12 @@ import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/anim
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/grid_delegate_route.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/infinite_grid_view.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/infinite_list_view.dart';
+import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/page_view_test_widget.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/scroll_controller_test_route.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/scroll_notification_test_route.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/single_child_scroll_view_test_route.dart';
+import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/tab_view_route1.dart';
+import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/tab_view_route2.dart';
 import 'package:flutter_fight/%E5%9F%BA%E7%9F%B3%E7%BB%84%E4%BB%B6/%E8%B7%AF%E7%94%B1/echo_route.dart';
 import 'package:flutter_fight/%E5%9F%BA%E7%9F%B3%E7%BB%84%E4%BB%B6/%E8%B7%AF%E7%94%B1/new_route.dart';
 import 'package:flutter_fight/%E5%9F%BA%E7%9F%B3%E7%BB%84%E4%BB%B6/%E8%B7%AF%E7%94%B1/tip_route.dart';
@@ -51,6 +54,7 @@ class MyApp extends StatelessWidget {
         'scroll_controller_test_route': (context) =>
             ScrollControllerTestRoute(),
         'grid_view': (context) => GridDelegateRoute(),
+        'tab_view_route2': (context) => TabViewRoute2(),
         '/': (context) =>
             MyHomePage(title: 'Flutter Combat Home Page'), //等同于下面写home，注册主路由
       },
@@ -117,8 +121,19 @@ class _MyHomePageState extends State<MyHomePage> {
             },
             child: Text('GridView'),
           ),
-          Expanded(child: AnimatedListRoute()),
-          Expanded(child: InfiniteGridView()),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                'tab_view_route2',
+                arguments: 'hi from main',
+              );
+            },
+            child: Text('TabViewRoute2'),
+          ),
+          Expanded(child: PageViewTestWidget()),
+          // Expanded(child: AnimatedListRoute()),
+          // Expanded(child: InfiniteGridView()),
           // Expanded(child: ScrollNotificationTestRoute()),
           // Expanded(child: InfiniteListView()),
           // Expanded(child: SingleChildScrollViewTestRoute()),
