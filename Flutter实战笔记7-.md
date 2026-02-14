@@ -332,3 +332,338 @@ Listener({
   Widget child
 })
 ```
+
+- `position`：它是指针相对于当对于全局坐标的偏移。
+- `localPosition`: 它是指针相对于当对于本身布局坐标的偏移。
+- `delta`：两次指针移动事件（`PointerMoveEvent`）的距离。
+- `pressure`：按压力度，如果手机屏幕支持压力传感器(如iPhone的3D Touch)，此属性会更有意义，如果手机不支持，则始终为1。
+- `orientation`：指针移动方向，是一个角度值。
+
+上面只是`PointerEvent`一些常用属性
+
+#### 忽略指针事件
+
+假如我们不想让某个子树响应`PointerEvent`的话，我们可以使用`IgnorePointer`和`AbsorbPointer`，这两个组件都能阻止子树接收指针事件，不同之处在于`AbsorbPointer`本身会参与命中测试，而`IgnorePointer`本身不会参与，这就意味着`AbsorbPointer`本身是可以接收指针事件的(但其子树不行)，而`IgnorePointer`不可以。一个简单的例子如下：
+
+```dart
+Listener(
+  child: AbsorbPointer(
+    child: Listener(
+      child: Container(
+        color: Colors.red,
+        width: 200.0,
+        height: 100.0,
+      ),
+      onPointerDown: (event)=>print("in"),
+    ),
+  ),
+  onPointerDown: (event)=>print("up"),
+)
+```
+
+点击`Container`时，由于它在`AbsorbPointer`的子树上，所以不会响应指针事件，所以日志不会输出"in"，但`AbsorbPointer`本身是可以接收指针事件的，所以会输出"up"。如果将`AbsorbPointer`换成`IgnorePointer`，那么两个都不会输出。
+
+### 手势识别
+
+#### GestureDetector
+
+**点击、双击、长按**
+
+触发相应事件后，在`Container`上显示事件名
+
+```dart
+class _GestureTestState extends State<GestureTest> {
+  String _operation = "No Gesture detected!"; //保存事件名
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: GestureDetector(
+        child: Container(
+          alignment: Alignment.center,
+          color: Colors.blue,
+          width: 200.0,
+          height: 100.0,
+          child: Text(
+            _operation,
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+        onTap: () => updateText("Tap"), //点击
+        onDoubleTap: () => updateText("DoubleTap"), //双击
+        onLongPress: () => updateText("LongPress"), //长按
+      ),
+    );
+  }
+
+  void updateText(String text) {
+    //更新显示的事件名
+    setState(() {
+      _operation = text;
+    });
+  }
+}
+```
+
+> **注意**： 当同时监听`onTap`和`onDoubleTap`事件时，当用户触发tap事件时，会有200毫秒左右的延时，这是因为当用户点击完之后很可能会再次点击以触发双击事件，所以`GestureDetector`会等一段时间来确定是否为双击事件。如果用户只监听了`onTap`（没有监听`onDoubleTap`）事件时，则没有延时。
+
+**拖动、滑动**
+
+`GestureDetector`对于拖动和滑动事件是没有区分的，他们本质上是一样的。`GestureDetector`会将要监听的组件的原点（左上角）作为本次手势的原点，当用户在监听的组件上按下手指时，手势识别就会开始。一个拖动圆形字母A的示例
+
+```dart
+class _Drag extends StatefulWidget {
+  @override
+  _DragState createState() => _DragState();
+}
+
+class _DragState extends State<_Drag> with SingleTickerProviderStateMixin {
+  double _top = 0.0; //距顶部的偏移
+  double _left = 0.0;//距左边的偏移
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: <Widget>[
+        Positioned(
+          top: _top,
+          left: _left,
+          child: GestureDetector(
+            child: CircleAvatar(child: Text("A")),
+            //手指按下时会触发此回调
+            onPanDown: (DragDownDetails e) {
+              //打印手指按下的位置(相对于屏幕)
+              print("用户手指按下：${e.globalPosition}");
+            },
+            //手指滑动时会触发此回调
+            onPanUpdate: (DragUpdateDetails e) {
+              //用户手指滑动时，更新偏移，重新构建
+              setState(() {
+                _left += e.delta.dx;
+                _top += e.delta.dy;
+              });
+            },
+            onPanEnd: (DragEndDetails e){
+              //打印滑动结束时在x、y轴上的速度
+              print(e.velocity);
+            },
+          ),
+        )
+      ],
+    );
+  }
+}
+```
+
+- `DragDownDetails.globalPosition`：当用户按下时，此属性为用户按下的位置相对于**屏幕**（而非父组件）原点(左上角)的偏移。
+- `DragUpdateDetails.delta`：当用户在屏幕上滑动时，会触发多次Update事件，`delta`指一次Update事件的滑动的偏移量。
+- `DragEndDetails.velocity`：该属性代表用户抬起手指时的滑动速度(包含x、y两个轴的），示例中并没有处理手指抬起时的速度，常见的效果是根据用户抬起手指时的速度做一个减速动画。
+
+**改为垂直移动**
+
+```dart
+class _DragVertical extends StatefulWidget {
+  @override
+  _DragVerticalState createState() => _DragVerticalState();
+}
+
+class _DragVerticalState extends State<_DragVertical> {
+  double _top = 0.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: <Widget>[
+        Positioned(
+          top: _top,
+          child: GestureDetector(
+            child: CircleAvatar(child: Text("A")),
+            //垂直方向拖动事件
+            onVerticalDragUpdate: (DragUpdateDetails details) {
+              setState(() {
+                _top += details.delta.dy;
+              });
+            },
+          ),
+        )
+      ],
+    );
+  }
+}
+```
+
+**缩放**
+
+`GestureDetector`可以监听缩放事件
+
+```dart
+class _Scale extends StatefulWidget {
+  const _Scale({Key? key}) : super(key: key);
+
+  @override
+  _ScaleState createState() => _ScaleState();
+}
+
+class _ScaleState extends State<_Scale> {
+  double _width = 200.0; //通过修改图片宽度来达到缩放效果
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: GestureDetector(
+        //指定宽度，高度自适应
+        child: Image.asset("./images/sea.png", width: _width),
+        onScaleUpdate: (ScaleUpdateDetails details) {
+          setState(() {
+            //缩放倍数在0.8到10倍之间
+            _width=200*details.scale.clamp(.8, 10.0);
+          });
+        },
+      ),
+    );
+  }
+}
+```
+
+现在在图片上双指张开、收缩就可以放大、缩小图片。
+
+####GestureRecognizer
+
+`GestureDetector`内部是使用一个或多个`GestureRecognizer`来识别各种手势的，而`GestureRecognizer`的作用就是通过`Listener`来将原始指针事件转换为语义手势，`GestureDetector`直接可以接收一个子widget。`GestureRecognizer`是一个抽象类，一种手势的识别器对应一个`GestureRecognizer`的子类
+
+用于给不是widget的增添动画
+
+一个给TextSpan变色的示例
+
+```dart
+import 'package:flutter/gestures.dart';
+
+class _GestureRecognizer extends StatefulWidget {
+  const _GestureRecognizer({Key? key}) : super(key: key);
+
+  @override
+  _GestureRecognizerState createState() => _GestureRecognizerState();
+}
+
+class _GestureRecognizerState extends State<_GestureRecognizer> {
+  TapGestureRecognizer _tapGestureRecognizer = TapGestureRecognizer();
+  bool _toggle = false; //变色开关
+
+  @override
+  void dispose() {
+    //用到GestureRecognizer的话一定要调用其dispose方法释放资源
+    _tapGestureRecognizer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(text: "你好世界"),
+            TextSpan(
+              text: "点我变色",
+              style: TextStyle(
+                fontSize: 30.0,
+                color: _toggle ? Colors.blue : Colors.red,
+              ),
+              recognizer: _tapGestureRecognizer
+                ..onTap = () {
+                  setState(() {
+                    _toggle = !_toggle;
+                  });
+                },
+            ),
+            TextSpan(text: "你好世界"),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+#### 事件机制
+
+1. 组件只有通过命中测试才能响应事件。
+2. 一个组件是否通过命中测试取决于 hitTestChildren(...) || hitTestSelf(...) 的值。
+3. 组件树中组件的命中测试顺序是深度优先的。
+4. 组件子节点命中测试的循序是倒序的，并且一旦有一个子节点的 hitTest 返回了 true，就会终止遍历，后续子节点将没有机会参与命中测试。这个原则可以结合 Stack 组件来理解。
+5. 大多数情况下 Listener 的 HitTestBehavior 为 opaque 或 translucent 效果是相同的，只有当其子节点的 hitTest 返回为 false 时才会有区别。
+6. HitTestBlocker 是一个很灵活的组件，我们可以通过它干涉命中测试的各个阶段。
+
+#### 手势冲突
+
+解决手势冲突的方法有两种：
+
+1. 使用 Listener。这相当于跳出了手势识别那套规则。
+2. 自定义手势手势识别器（ Recognizer）。
+
+```dart
+Listener(  // 将 GestureDetector 换位 Listener 即可
+  onPointerUp: (x) => print("2"),
+  child: Container(
+    width: 200,
+    height: 200,
+    color: Colors.red,
+    alignment: Alignment.center,
+    child: GestureDetector(
+      onTap: () => print("1"),
+      child: Container(
+        width: 50,
+        height: 50,
+        color: Colors.grey,
+      ),
+    ),
+  ),
+);
+```
+
+代码很简单，只需将 GestureDetector 换位 Listener 即可，可以两个都换，也可以只换一个。可以看见，通过`Listener`直接识别原始指针事件来解决冲突的方法很简单，因此，当遇到手势冲突时，我们应该优先考虑 Listener 。
+
+#### 通知 Notification
+
+在widget树中，每一个节点都可以分发通知，通知会沿着当前节点向上传递，所有父节点都可以通过`NotificationListener`来监听通知。Flutter中将这种由子向父的传递通知的机制称为**通知冒泡**（Notification Bubbling）。通知冒泡和用户触摸事件冒泡是相似的，但有一点不同：通知冒泡可以中止，但用户触摸事件不行。
+
+一个监听可滚动组件滚动通知的例子：
+
+```dart
+NotificationListener(
+  onNotification: (notification){
+    switch (notification.runtimeType){
+      case ScrollStartNotification: print("开始滚动"); break;
+      case ScrollUpdateNotification: print("正在滚动"); break;
+      case ScrollEndNotification: print("滚动停止"); break;
+      case OverscrollNotification: print("滚动到边界"); break;
+    }
+  },
+  child: ListView.builder(
+    itemCount: 100,
+    itemBuilder: (context, index) {
+      return ListTile(title: Text("$index"),);
+    }
+  ),
+);
+```
+
+上例中的滚动通知如`ScrollStartNotification`、`ScrollUpdateNotification`等都是继承自`ScrollNotification`类，不同类型的通知子类会包含不同的信息，比如`ScrollUpdateNotification`有一个`scrollDelta`属性，它记录了移动的位移
+
+```dart
+//指定监听通知的类型为滚动结束通知(ScrollEndNotification)
+NotificationListener<ScrollEndNotification>(
+  onNotification: (notification){
+    //只会在滚动结束时才会触发此回调
+    print(notification);
+  },
+  child: ListView.builder(
+    itemCount: 100,
+    itemBuilder: (context, index) {
+      return ListTile(title: Text("$index"),);
+    }
+  ),
+);
+```
+
+### 动画
+

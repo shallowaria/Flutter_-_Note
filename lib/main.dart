@@ -1,4 +1,7 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_fight/%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86%E4%B8%8E%E9%80%9A%E7%9F%A5/drag_widget.dart';
+import 'package:flutter_fight/%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86%E4%B8%8E%E9%80%9A%E7%9F%A5/pointer_move_indicator.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/animated_list_route.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/grid_delegate_route.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/infinite_grid_view.dart';
@@ -131,7 +134,8 @@ class _MyHomePageState extends State<MyHomePage> {
             },
             child: Text('TabViewRoute2'),
           ),
-          Expanded(child: PageViewTestWidget()),
+          PointerMoveIndicator(),
+          Expanded(child: DragWidget()),
           // Expanded(child: AnimatedListRoute()),
           // Expanded(child: InfiniteGridView()),
           // Expanded(child: ScrollNotificationTestRoute()),
