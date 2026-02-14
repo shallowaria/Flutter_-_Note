@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/animated_list_route.dart';
+import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/grid_delegate_route.dart';
+import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/infinite_grid_view.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/infinite_list_view.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/scroll_controller_test_route.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/scroll_notification_test_route.dart';
@@ -48,6 +50,7 @@ class MyApp extends StatelessWidget {
         'scaffold_route': (context) => ScaffoldRoute(),
         'scroll_controller_test_route': (context) =>
             ScrollControllerTestRoute(),
+        'grid_view': (context) => GridDelegateRoute(),
         '/': (context) =>
             MyHomePage(title: 'Flutter Combat Home Page'), //等同于下面写home，注册主路由
       },
@@ -78,10 +81,6 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Column(
         children: <Widget>[
-          Expanded(child: AnimatedListRoute()),
-          // Expanded(child: ScrollNotificationTestRoute()),
-          // Expanded(child: InfiniteListView()),
-          // Expanded(child: SingleChildScrollViewTestRoute()),
           TextButton(
             onPressed: () {
               Navigator.pushNamed(
@@ -108,6 +107,21 @@ class _MyHomePageState extends State<MyHomePage> {
               style: TextStyle(color: Colors.blue[700]),
             ),
           ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                'grid_view',
+                arguments: 'hi from main',
+              );
+            },
+            child: Text('GridView'),
+          ),
+          Expanded(child: AnimatedListRoute()),
+          Expanded(child: InfiniteGridView()),
+          // Expanded(child: ScrollNotificationTestRoute()),
+          // Expanded(child: InfiniteListView()),
+          // Expanded(child: SingleChildScrollViewTestRoute()),
         ],
       ),
     );

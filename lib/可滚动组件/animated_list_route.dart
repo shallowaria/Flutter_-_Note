@@ -11,7 +11,7 @@ class AnimatedListRouteState extends State<AnimatedListRoute> {
   var data = <String>[];
   int counter = 5;
 
-  final globalKey = GlobalKey<AnimatedListState>();
+  final globalKey = GlobalKey<AnimatedListState>(); //用于insertItem和removeItem
 
   @override
   void initState() {

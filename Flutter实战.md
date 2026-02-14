@@ -739,7 +739,7 @@ SingleChildScrollView**只能接收一个子组件**
 
 `primary`属性：它表示是否使用 widget 树中默认的`PrimaryScrollController`（MaterialApp 组件树中已经默认包含一个 PrimaryScrollController 了）；当滑动方向为垂直方向（`scrollDirection`值为`Axis.vertical`）并且没有指定`controller`时，`primary`默认为`true`
 
-### LisstView
+### ListView
 
 #### 默认构造函数
 
@@ -862,11 +862,11 @@ class ListView3 extends StatelessWidget {
 
 ![image-20260213214915179](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260213214915179.png)
 
-### 无限加载列表
+####无限加载列表
 
 从数据源异步分批拉取一些数据，然后用`ListView`展示，当我们滑动到列表末尾时，判断是否需要再去拉取数据，如果是，则去拉取，拉取过程中在表尾显示一个loading，拉取成功后将数据插入列表；如果不需要再去拉取，则在表尾提示"没有更多"。
 
-### 添加固列表头
+####添加固列表头
 
 ![image-20260213220305727](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260213220305727.png)
 
@@ -996,3 +996,115 @@ void insertItem(int index, { Duration duration = _kDuration });
 
 void removeItem(int index, AnimatedListRemovedItemBuilder builder, { Duration duration = _kDuration }) ;
 ```
+
+### GridView 网格布局
+
+```dart
+GridView({
+    Key? key,
+    Axis scrollDirection = Axis.vertical,
+    bool reverse = false,
+    ScrollController? controller,
+    bool? primary,
+    ScrollPhysics? physics,
+    bool shrinkWrap = false,
+    EdgeInsetsGeometry? padding,
+    required this.gridDelegate,  //下面解释
+    bool addAutomaticKeepAlives = true,
+    bool addRepaintBoundaries = true,
+    double? cacheExtent, 
+    List<Widget> children = const <Widget>[],
+    ...
+  })
+```
+
+`gridDelegate`参数，类型是`SliverGridDelegate`，它的作用是控制`GridView`子组件如何排列(layout)。
+
+`SliverGridDelegate`是一个抽象类，定义了`GridView` Layout相关接口，子类需要通过实现它们来实现具体的布局算法。Flutter中提供了两个`SliverGridDelegate`的子类`SliverGridDelegateWithFixedCrossAxisCount`和`SliverGridDelegateWithMaxCrossAxisExtent`，我们可以直接使用
+
+####SliverGridDelegateWithFixedCrossAxisCount
+
+```dart
+SliverGridDelegateWithFixedCrossAxisCount({
+  @required double crossAxisCount, 
+  double mainAxisSpacing = 0.0,
+  double crossAxisSpacing = 0.0,
+  double childAspectRatio = 1.0,
+})
+```
+
+- `crossAxisCount`：横轴子元素的数量。此属性值确定后子元素在横轴的长度就确定了，即ViewPort横轴长度除以`crossAxisCount`的商。
+- `mainAxisSpacing`：主轴方向的间距。
+- `crossAxisSpacing`：横轴方向子元素的间距。
+- `childAspectRatio`：子元素在横轴长度和主轴长度的比例。由于`crossAxisCount`指定后，子元素横轴长度就确定了，然后通过此参数值就可以确定子元素在主轴的长度。
+
+可以发现，子元素的大小是通过`crossAxisCount`和`childAspectRatio`两个参数共同决定的。注意，这里的子元素指的是子组件的最大显示空间，注意确保子组件的实际大小不要超出子元素的空间。
+
+#### SliverGridDelegateWithMaxCrossAxisExtent
+
+该子类实现了一个横轴子元素为固定最大长度的layout算法
+
+```dart
+SliverGridDelegateWithMaxCrossAxisExtent({
+  double maxCrossAxisExtent,
+  double mainAxisSpacing = 0.0,
+  double crossAxisSpacing = 0.0,
+  double childAspectRatio = 1.0,
+})
+```
+
+`maxCrossAxisExtent`为子元素在横轴上的最大长度，之所以是“最大”长度，是**因为横轴方向每个子元素的长度仍然是等分的**，举个例子，如果ViewPort的横轴长度是450，那么当`maxCrossAxisExtent`的值在区间[450/4，450/3)内的话，子元素最终实际长度都为112.5，而`childAspectRatio`所指的子元素横轴和主轴的长度比为**最终的长度比**。其他参数和`SliverGridDelegateWithFixedCrossAxisCount`相同。
+
+####GridView.count
+
+`GridView.count`构造函数内部使用了`SliverGridDelegateWithFixedCrossAxisCount`，我们通过它可以快速的创建横轴固定数量子元素的`GridView`，我们可以通过以下代码实现和上面例子相同的效果等：
+
+```dart
+GridView.count( 
+  crossAxisCount: 3,
+  childAspectRatio: 1.0,
+  children: <Widget>[
+    Icon(Icons.ac_unit),
+    Icon(Icons.airport_shuttle),
+    Icon(Icons.all_inclusive),
+    Icon(Icons.beach_access),
+    Icon(Icons.cake),
+    Icon(Icons.free_breakfast),
+  ],
+);
+```
+
+#### GridView.extent
+
+GridView.extent构造函数内部使用了SliverGridDelegateWithMaxCrossAxisExtent，我们通过它可以快速的创建横轴子元素为固定最大长度的GridView，上面的示例代码等价于：
+
+```dart
+GridView.extent(
+   maxCrossAxisExtent: 120.0,
+   childAspectRatio: 2.0,
+   children: <Widget>[
+     Icon(Icons.ac_unit),
+     Icon(Icons.airport_shuttle),
+     Icon(Icons.all_inclusive),
+     Icon(Icons.beach_access),
+     Icon(Icons.cake),
+     Icon(Icons.free_breakfast),
+   ],
+ );
+```
+
+#### GridView.builder
+
+当子widget比较多时，我们可以通过`GridView.builder`来动态创建子widget。`GridView.builder` 必须指定的参数有两个：
+
+```dart
+GridView.builder(
+ ...
+ required SliverGridDelegate gridDelegate, 
+ required IndexedWidgetBuilder itemBuilder,
+)
+```
+
+其中`itemBuilder`为子widget构建器。
+
+ 
