@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/animated_list_route.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/infinite_list_view.dart';
+import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/scroll_controller_test_route.dart';
+import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/scroll_notification_test_route.dart';
 import 'package:flutter_fight/%E5%8F%AF%E6%BB%9A%E5%8A%A8%E7%BB%84%E4%BB%B6/single_child_scroll_view_test_route.dart';
 import 'package:flutter_fight/%E5%9F%BA%E7%9F%B3%E7%BB%84%E4%BB%B6/%E8%B7%AF%E7%94%B1/echo_route.dart';
 import 'package:flutter_fight/%E5%9F%BA%E7%9F%B3%E7%BB%84%E4%BB%B6/%E8%B7%AF%E7%94%B1/new_route.dart';
@@ -43,6 +46,8 @@ class MyApp extends StatelessWidget {
         'new_page2': (context) => EchoRoute(),
         'input_form': (context) => LoginFormPage(),
         'scaffold_route': (context) => ScaffoldRoute(),
+        'scroll_controller_test_route': (context) =>
+            ScrollControllerTestRoute(),
         '/': (context) =>
             MyHomePage(title: 'Flutter Combat Home Page'), //等同于下面写home，注册主路由
       },
@@ -73,7 +78,9 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Column(
         children: <Widget>[
-          Expanded(child: InfiniteListView()),
+          Expanded(child: AnimatedListRoute()),
+          // Expanded(child: ScrollNotificationTestRoute()),
+          // Expanded(child: InfiniteListView()),
           // Expanded(child: SingleChildScrollViewTestRoute()),
           TextButton(
             onPressed: () {
@@ -85,6 +92,19 @@ class _MyHomePageState extends State<MyHomePage> {
             },
             child: Text(
               'jump to scaffold_route',
+              style: TextStyle(color: Colors.blue[700]),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                'scroll_controller_test_route',
+                arguments: 'hi from main',
+              );
+            },
+            child: Text(
+              'scroll_controller_test_route',
               style: TextStyle(color: Colors.blue[700]),
             ),
           ),

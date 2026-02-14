@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:english_words/english_words.dart';
+import 'package:flutter/material.dart';
 
 class InfiniteListView extends StatefulWidget {
   const InfiniteListView({super.key});
@@ -9,7 +9,7 @@ class InfiniteListView extends StatefulWidget {
 }
 
 class InfiniteListViewState extends State<InfiniteListView> {
-  static const loadingTag = "##loading##"; //表尾标记
+  static const loadingTag = '##loading##'; //表尾标记
   final _words = <String>[loadingTag];
 
   @override
@@ -25,13 +25,13 @@ class InfiniteListViewState extends State<InfiniteListView> {
       itemBuilder: (context, index) {
         //如果到了表尾
         if (_words[index] == loadingTag) {
-          //不足100条，继续获取数据
+          // 不足100条，继续获取数据
           if (_words.length - 1 < 100) {
             //获取数据
             _retrieveData();
             //加载时显示loading
             return Container(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(16.0),
               alignment: Alignment.center,
               child: SizedBox(
                 width: 24.0,
@@ -40,11 +40,11 @@ class InfiniteListViewState extends State<InfiniteListView> {
               ),
             );
           } else {
-            //已经加载了100条数据，不再获取数据。
+            //已经加载了100条数据，不再获取数据
             return Container(
-              alignment: Alignment.center,
               padding: EdgeInsets.all(16.0),
-              child: Text("没有更多了", style: TextStyle(color: Colors.grey)),
+              alignment: Alignment.center,
+              child: Text('没有更多了', style: TextStyle(color: Colors.grey)),
             );
           }
         }

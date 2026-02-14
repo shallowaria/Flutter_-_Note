@@ -1,5 +1,39 @@
 ##随记
 
+### context和build
+
+在 Flutter 中：
+
+- `context` 是作为 `build` 的**参数**传进来的。
+- 这意味着你只能在 `build` 方法内部，或者从 `build` 传出去的方法里使用它。
+
+需要执行向上操作查找时需要context,即React内的`useContext Hook`，避免Prop Drilling
+
+| **概念**     | **React (Hook 风格)**                    | **Flutter**                                  |
+| ------------ | ---------------------------------------- | -------------------------------------------- |
+| **提供者**   | `<ThemeContext.Provider value={...}>`    | `Theme(...)` 组件                            |
+| **消费者**   | `const theme = useContext(ThemeContext)` | `Theme.of(context)`                          |
+| **定位器**   | 虚拟 DOM 树的位置                        | `BuildContext` (context)                     |
+| **底层机制** | Fiber 树向上查找                         | Element 树向上查找 (`visitAncestorElements`) |
+
+比如查找数据`Theme.of(context)`、交互与路由`Navigator.push(context, ...)`、获取屏幕信息`MediaQuery.of(context)`
+
+
+
+#### A. 原始组件（Leaf Widgets）
+
+像 `Text`、`Image`、`Padding`。它们是由 Flutter 内部直接实现的，不依赖 `build` 方法来组合其他 Widget。它们直接对应底层的渲染逻辑。
+
+#### B. 组合组件（Composed Widgets）
+
+就是你写的 `StatelessWidget` 或 `StatefulWidget`。
+
+- 这些组件本身**不具备渲染能力**。
+- 它们的作用是**“编剧”**。`build` 方法就是剧本，告诉 Flutter：“我这个组件其实是由一个 `Column`、一个 `Text` 和一个 `Button` 组成的。”
+- **必须要 `build`：** 框架需要调用你的 `build` 方法，并传给你一个 `context`，这样你才能在你的“剧本”里使用 `Theme.of(context)` 等需要定位的功能。
+
+
+
 Flutter 中如果属性发生变化则会重新构建Widget树，即重新创建新的 Widget 实例来替换旧的 Widget 实例
 
 - `Key`: 这个`key`属性类似于 React/Vue 中的`key`，主要的作用是决定是否在下一次`build`时复用旧的 widget ，决定的条件在`canUpdate()`方法中。
@@ -159,6 +193,12 @@ Dev Tools: Dart: CTRL+Shift+P
 
 和JS类似，Dart中可以通过`try/catch/finally`来捕获代码块异常，因为其也是单线程
 
+### final 和 const
+
+**`final`：** “我的心里只有你”，但我允许你（对象）改变发型、换衣服。
+
+**`const`：** “我的心里只有你”，且你必须像雕像一样永远保持这个姿势，动一下都不行。
+
 ## 基础组件
 
 ### Text
@@ -280,6 +320,8 @@ Flutter 中有两种布局模型：
 > 约定：为了描述方便，如果我们说一个组件不约束其子组件或者取消对子组件约束时是指对子组件约束的最大宽高为无限大，而最小宽高为0，相当于子组件完全可以自己根据需要的空间来确定自己的大小。
 
 在实际开发中，当我们发现已经使用 `SizedBox` 或 `ConstrainedBox`给子元素指定了固定宽高，但是仍然没有效果时，几乎可以断定：已经有父组件指定了约束！
+
+实际上`ConstrainedBox`和`SizedBox`都是通过`RenderConstrainedBox`来渲染的，我们可以看到`ConstrainedBox`和`SizedBox`的`createRenderObject()`方法都返回的是一个`RenderConstrainedBox`对象
 
 ### 线性布局 (Row Column)
 
@@ -600,11 +642,11 @@ DecoratedBox(
 | ClipRect   | 默认剪裁掉子组件布局空间之外的绘制内容（溢出部分剪裁）   |
 | ClipPath   | 按照自定义的路径剪裁                                     |
 
-### 空间适配
+###空间适配
 
 - FittedBox 动态调整以防止溢出
 
-#### 页面骨架
+###页面骨架
 
 - Scaffold
 
@@ -824,7 +866,7 @@ class ListView3 extends StatelessWidget {
 
 从数据源异步分批拉取一些数据，然后用`ListView`展示，当我们滑动到列表末尾时，判断是否需要再去拉取数据，如果是，则去拉取，拉取过程中在表尾显示一个loading，拉取成功后将数据插入列表；如果不需要再去拉取，则在表尾提示"没有更多"。
 
-### 添加固定表头
+### 添加固列表头
 
 ![image-20260213220305727](C:\Users\ClusteRain\AppData\Roaming\Typora\typora-user-images\image-20260213220305727.png)
 
@@ -840,4 +882,117 @@ Widget build(BuildContext context) {
     ),
   ]);
 }
+```
+
+### 控制和滚动监听
+
+#### Scrollbar
+
+**`ListView.builder`：** 它是一个**功能性组件**。它负责列表项的布局、懒加载（Sliver 机制）以及处理手指滑动的物理碰撞。但它**本身不包含**那个长条形的指示器（进度条）。
+
+**`Scrollbar`：** 它是一个**视觉装饰组件**。它的唯一作用就是在子组件（必须是可滚动的）旁边画出那个代表当前位置的“滑块”。
+
+#### ScrollController
+
+`ScrollController`构造函数
+
+```dart
+ScrollController({
+  double initialScrollOffset = 0.0, //初始滚动位置
+  this.keepScrollOffset = true,//是否保存滚动位置
+  ...
+})
+```
+
+- `offset`：可滚动组件当前的滚动位置。
+- `jumpTo(double offset)`、`animateTo(double offset,...)`：这两个方法用于跳转到指定的位置，它们不同之处在于，后者在跳转时会执行一个动画，而前者不会。
+
+#####PageStorageKey
+
+`PageStorage`是一个用于保存页面(路由)相关数据的组件,它拥有一个存储桶（bucket），子树中的Widget可以通过指定不同的`PageStorageKey`来存储各自的数据或状态。
+
+每次滚动结束，可滚动组件都会将滚动位置`offset`存储到`PageStorage`中，当可滚动组件重新创建时再恢复。如果`ScrollController.keepScrollOffset`为`false`，则滚动位置将不会被存储，可滚动组件重新创建时会使用`ScrollController.initialScrollOffset`；`ScrollController.keepScrollOffset`为`true`时，可滚动组件在**第一次**创建时，会滚动到`initialScrollOffset`处
+
+```dart
+ListView(key: PageStorageKey(1), ... );
+...
+ListView(key: PageStorageKey(2), ... );
+```
+
+不同的`PageStorageKey`，需要不同的值，这样才可以为不同可滚动组件保存其滚动位置。
+
+> 只有当Widget发生结构变化，导致可滚动组件的State销毁或重新构建时才会丢失状态，这种情况就需要显式指定`PageStorageKey`，通过`PageStorage`来存储滚动位置，一个典型的场景是在使用`TabBarView`时，在Tab发生切换时，Tab页中的可滚动组件的State就会销毁，这时如果想恢复滚动位置就需要指定`PageStorageKey`
+
+#####ScrollPosition
+
+ScrollPosition是用来保存可滚动组件的滚动位置的。一个`ScrollController`对象可以同时被多个可滚动组件使用，`ScrollController`会为每一个可滚动组件创建一个`ScrollPosition`对象，这些`ScrollPosition`保存在`ScrollController`的`positions`属性中（`List<ScrollPosition>`）。`ScrollPosition`是真正保存滑动位置信息的对象，`offset`只是一个便捷属性：
+
+```dart
+double get offset => position.pixels;
+```
+
+一个`ScrollController`虽然可以对应多个可滚动组件，但是有一些操作，如读取滚动位置`offset`，则需要一对一！但是我们仍然可以在一对多的情况下，通过其他方法读取滚动位置，举个例子，假设一个`ScrollController`同时被两个可滚动组件使用，那么我们可以通过如下方式分别读取他们的滚动位置：
+
+```dart
+...
+controller.positions.elementAt(0).pixels
+controller.positions.elementAt(1).pixels
+...    
+```
+
+我们可以通过`controller.positions.length`来确定`controller`被几个可滚动组件使用。
+
+ScrollPosition的方法
+
+`ScrollPosition`有两个常用方法：`animateTo()` 和 `jumpTo()`，它们是真正来控制跳转滚动位置的方法，`ScrollController`的这两个同名方法，内部最终都会调用`ScrollPosition`的。
+
+##### ScrollController控制原理
+
+```dart
+ScrollPosition createScrollPosition(
+    ScrollPhysics physics,
+    ScrollContext context,
+    ScrollPosition oldPosition);
+void attach(ScrollPosition position) ;
+void detach(ScrollPosition position) ;
+```
+
+当`ScrollController`和可滚动组件关联时，可滚动组件首先会调用`ScrollController`的`createScrollPosition()`方法来创建一个`ScrollPosition`来存储滚动位置信息，接着，可滚动组件会调用`attach()`方法，将创建的`ScrollPosition`添加到`ScrollController`的`positions`属性中，这一步称为“注册位置”，只有注册后`animateTo()` 和 `jumpTo()`才可以被调用。
+
+当可滚动组件销毁时，会调用`ScrollController`的`detach()`方法，将其`ScrollPosition`对象从`ScrollController`的`positions`属性中移除，这一步称为“注销位置”，注销后`animateTo()` 和 `jumpTo()` 将不能再被调用。
+
+需要注意的是，`ScrollController`的`animateTo()` 和 `jumpTo()`内部会调用所有`ScrollPosition`的`animateTo()` 和 `jumpTo()`，以实现所有和该`ScrollController`关联的可滚动组件都滚动到指定的位置。
+
+#### 滚动监听
+
+#####1. 滚动通知
+
+Flutter Widget树中子Widget可以通过发送通知（Notification）与父(包括祖先)Widget通信。父级组件可以通过`NotificationListener`组件来监听自己关注的通知，这种通信方式类似于Web开发中浏览器的事件冒泡，我们在Flutter中沿用“冒泡”这个术语，关于通知冒泡我们将在后面“事件处理与通知”一章中详细介绍。
+
+可滚动组件在滚动时会发送`ScrollNotification`类型的通知，`ScrollBar`正是通过监听滚动通知来实现的。通过`NotificationListener`监听滚动事件和通过`ScrollController`有两个主要的不同：
+
+1. NotificationListener可以在可滚动组件到widget树根之间任意位置监听。而`ScrollController`只能和具体的可滚动组件关联后才可以。
+2. 收到滚动事件后获得的信息不同；`NotificationListener`在收到滚动事件时，通知中会携带当前滚动位置和ViewPort的一些信息，而`ScrollController`只能获取当前滚动位置。
+
+实例在`scroll_notification_test_route.dart`
+
+在接收到滚动事件时，参数类型为`ScrollNotification`，它包括一个`metrics`属性，它的类型是`ScrollMetrics`，该属性包含当前ViewPort及滚动位置等信息：
+
+- `pixels`：当前滚动位置。
+- `maxScrollExtent`：最大可滚动长度。
+- `extentBefore`：滑出ViewPort顶部的长度；此示例中相当于顶部滑出屏幕上方的列表长度。
+- `extentInside`：ViewPort内部长度；此示例中屏幕显示的列表部分的长度。
+- `extentAfter`：列表中未滑入ViewPort部分的长度；此示例中列表底部未显示到屏幕范围部分的长度。
+- `atEdge`：是否滑到了可滚动组件的边界（此示例中相当于列表顶或底部）。
+
+###AnimatedList
+
+AnimatedList 和 ListView 的功能大体相似，不同的是， AnimatedList 可以在列表中插入或删除节点时执行一个动画，在需要添加或删除列表项的场景中会提高用户体验。
+
+AnimatedList 是一个 StatefulWidget，它对应的 State 类型为 AnimatedListState，添加和删除元素的方法位于 AnimatedListState 中：
+
+```dart
+void insertItem(int index, { Duration duration = _kDuration });
+
+void removeItem(int index, AnimatedListRemovedItemBuilder builder, { Duration duration = _kDuration }) ;
 ```
